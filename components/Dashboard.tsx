@@ -40,7 +40,9 @@ export default function Dashboard({ user }: DashboardProps) {
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       if (!session) return
 
       // Fetch prices
@@ -81,16 +83,26 @@ export default function Dashboard({ user }: DashboardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-slate-950 text-gray-100">
+      {/* Top Nav */}
+      <nav className="border-b border-slate-800/70 bg-black/40 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-bold text-gray-900">Investing Assistant</h1>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                AI Investing
+              </span>
+              <h1 className="text-2xl font-semibold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                Investing Assistant
+              </h1>
+            </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">{user.email}</span>
+              <span className="text-xs sm:text-sm text-slate-400">
+                {user?.email}
+              </span>
               <button
                 onClick={handleSignOut}
-                className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                className="px-3 py-1.5 text-xs sm:text-sm rounded-md border border-slate-600/70 text-slate-200 hover:bg-slate-800/80 transition-colors"
               >
                 Sign Out
               </button>
@@ -99,41 +111,52 @@ export default function Dashboard({ user }: DashboardProps) {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex space-x-4 border-b">
-              <button
-                onClick={() => setActiveTab('portfolio')}
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'portfolio'
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Portfolio
-              </button>
-              <button
-                onClick={() => setActiveTab('digest')}
-                className={`px-4 py-2 font-medium ${
-                  activeTab === 'digest'
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Daily Digest
-              </button>
-            </div>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Header row: tabs + refresh */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          {/* Tabs */}
+          <div className="inline-flex items-center rounded-full bg-slate-900/70 border border-slate-800/80 p-1">
             <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              onClick={() => setActiveTab('portfolio')}
+              className={`px-4 py-1.5 text-sm rounded-full transition-all ${
+                activeTab === 'portfolio'
+                  ? 'bg-cyan-500 text-black font-semibold shadow-md'
+                  : 'text-slate-400 hover:text-cyan-300'
+              }`}
             >
-              {refreshing ? 'Refreshing...' : 'Refresh Data'}
+              Portfolio
+            </button>
+            <button
+              onClick={() => setActiveTab('digest')}
+              className={`px-4 py-1.5 text-sm rounded-full transition-all ${
+                activeTab === 'digest'
+                  ? 'bg-cyan-500 text-black font-semibold shadow-md'
+                  : 'text-slate-400 hover:text-cyan-300'
+              }`}
+            >
+              Daily Digest
             </button>
           </div>
+
+          {/* Refresh button */}
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {refreshing ? (
+              <>
+                <span className="mr-2 h-4 w-4 border-2 border-transparent border-t-white rounded-full animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              'Refresh Data'
+            )}
+          </button>
         </div>
 
+        {/* Content */}
         {activeTab === 'portfolio' && (
           <div className="space-y-6">
             <PortfolioUpload onUpload={fetchPositions} />
@@ -146,4 +169,3 @@ export default function Dashboard({ user }: DashboardProps) {
     </div>
   )
 }
-
