@@ -33,7 +33,9 @@ export default function PortfolioUpload({ onUpload }: PortfolioUploadProps) {
       reader.onload = async (e) => {
         const csvContent = e.target?.result as string
 
-        const { data: { session } } = await supabase.auth.getSession()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
         if (!session) {
           throw new Error('Not authenticated')
         }
@@ -61,32 +63,59 @@ export default function PortfolioUpload({ onUpload }: PortfolioUploadProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-semibold mb-4">Upload Portfolio (CSV)</h2>
-      <p className="text-sm text-gray-600 mb-4">
-        Upload a Robinhood positions.csv file. Required columns: Symbol, Quantity (optional: Average Cost Basis)
+    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xl font-semibold text-slate-100">Upload Portfolio (CSV)</h2>
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-950/80 text-slate-400 border border-slate-800">
+          Robinhood positions.csv
+        </span>
+      </div>
+
+      <p className="text-xs text-slate-400 mb-4">
+        Required columns:{' '}
+        <span className="text-slate-200">Symbol</span>,{' '}
+        <span className="text-slate-200">Quantity</span>{' '}
+        <span className="text-slate-500">(optional: Average Cost Basis)</span>.
       </p>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <input
           type="file"
           accept=".csv"
           onChange={handleFileChange}
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          className="block w-full text-xs text-slate-400
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-md file:border-0
+            file:text-xs file:font-semibold
+            file:bg-cyan-500/10 file:text-cyan-400
+            hover:file:bg-cyan-500/20
+            cursor-pointer"
         />
         <button
           onClick={handleUpload}
           disabled={!file || uploading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-md
+            bg-gradient-to-r from-blue-600 to-cyan-500
+            hover:from-blue-500 hover:to-cyan-400
+            text-white shadow-lg shadow-cyan-900/40
+            disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
-          {uploading ? 'Uploading...' : 'Upload'}
+          {uploading ? (
+            <>
+              <span className="mr-2 h-4 w-4 border-2 border-transparent border-t-white rounded-full animate-spin" />
+              Uploading...
+            </>
+          ) : (
+            'Upload'
+          )}
         </button>
       </div>
 
       {error && (
-        <div className="mt-4 text-red-600 text-sm">{error}</div>
+        <div className="mt-3 text-red-400 text-xs">
+          {error}
+        </div>
       )}
     </div>
   )
 }
-
