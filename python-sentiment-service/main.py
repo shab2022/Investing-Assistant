@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import torch
+import requests
 import logging
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,18 +20,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load FinBERT model
-try:
-    logger.info("Loading FinBERT model...")
-    model_name = "ProsusAI/finbert"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name)
-    model.eval()
-    logger.info("FinBERT model loaded successfully")
-except Exception as e:
-    logger.error(f"Error loading model: {e}")
-    tokenizer = None
-    model = None
+# HuggingFace Inference API settings
+HF_API_URL = "https://api-inference.huggingface.co/models/ProsusAI/finbert"
+HF_TOKEN = os.environ.get("HUGGINGFACE_TOKEN", "")  # Optional, works without token but may have rate limits
+
+logger.info("Using HuggingFace Inference API for FinBERT")
 
 
 class SentimentRequest(BaseModel):
@@ -45,31 +38,49 @@ class SentimentResponse(BaseModel):
 
 def get_sentiment_score(text: str) -> float:
     """
-    Get sentiment score from FinBERT model.
+    Get sentiment score from FinBERT model via HuggingFace Inference API.
     Returns a score between -1 (negative) and 1 (positive).
     """
-    if model is None or tokenizer is None:
-        logger.warning("Model not loaded, returning neutral score")
-        return 0.0
-
     try:
-        # Tokenize and get predictions
-        inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
+        headers = {}
+        if HF_TOKEN:
+            headers["Authorization"] = f"Bearer {HF_TOKEN}"
         
-        with torch.no_grad():
-            outputs = model(**inputs)
-            predictions = torch.nn.functional.softmax(outputs.logits, dim=-1)
+        # Call HuggingFace API
+        response = requests.post(
+            HF_API_URL,
+            headers=headers,
+            json={"inputs": text},
+            timeout=30
+        )
         
-        # FinBERT labels: positive, negative, neutral
-        # Map to sentiment score: positive -> 1, neutral -> 0, negative -> -1
-        positive_score = predictions[0][0].item()
-        negative_score = predictions[0][1].item()
-        neutral_score = predictions[0][2].item()
+        if response.status_code == 200:
+            result = response.json()
+            
+            # Parse the response - HF returns list of predictions
+            if isinstance(result, list) and len(result) > 0:
+                predictions = result[0]
+                
+                # Find scores for each label
+                positive_score = 0.0
+                negative_score = 0.0
+                
+                for pred in predictions:
+                    label = pred.get("label", "").lower()
+                    score = pred.get("score", 0.0)
+                    
+                    if "positive" in label:
+                        positive_score = score
+                    elif "negative" in label:
+                        negative_score = score
+                
+                # Convert to -1 to 1 scale
+                sentiment_score = positive_score - negative_score
+                return sentiment_score
         
-        # Convert to -1 to 1 scale
-        score = positive_score - negative_score
+        logger.warning(f"API returned status {response.status_code}, using neutral score")
+        return 0.0
         
-        return score
     except Exception as e:
         logger.error(f"Error in sentiment analysis: {e}")
         return 0.0
@@ -84,7 +95,7 @@ def root():
 def health():
     return {
         "status": "healthy",
-        "model_loaded": model is not None
+        "model_type": "huggingface_inference_api"
     }
 
 
