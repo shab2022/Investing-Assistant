@@ -42,4 +42,9 @@ __pycache__/
 venv/
 env/
 ENV/
+.venv/
+
+# supabase
+supabase/.temp/
+.supabase/
 

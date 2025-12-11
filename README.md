@@ -41,20 +41,132 @@ A web application for portfolio analysis and daily financial digest using free-t
 - Node.js 18+ and npm
 - Python 3.9+
 - Supabase account (free tier)
+- Supabase CLI (for deploying edge functions)
 
-### 1. Supabase Setup
+### 1. Supabase Project Setup
 
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to SQL Editor and run the SQL from `supabase/schema.sql`
-3. Go to Edge Functions and deploy:
-   - `ingest-csv`
-   - `fetch-prices`
-   - `fetch-news`
-   - `generate-digest`
-   - `daily-digest-cron`
-4. Set up environment variables in Supabase dashboard:
-   - `SENTIMENT_SERVICE_URL` (your Python service URL)
-   - `CRON_SECRET` (for cron job security)
+#### Step 1.1: Create New Supabase Project
+
+1. Go to [supabase.com](https://supabase.com) and sign in
+2. Click **"New Project"**
+3. Fill in the details:
+   - **Name**: `investing-assistant` (or your preferred name)
+   - **Database Password**: Choose a strong password (save it somewhere safe)
+   - **Region**: Select the closest region to you
+   - **Pricing Plan**: Free
+4. Click **"Create new project"** and wait for it to finish initializing (2-3 minutes)
+
+#### Step 1.2: Get Your Project Credentials
+
+1. In your new Supabase project dashboard, go to **Settings** → **API**
+2. Copy the following values (you'll need them later):
+   - **Project URL** (looks like: `https://xxxxxxxxxxxxx.supabase.co`)
+   - **anon/public key** (under "Project API keys")
+   - **service_role key** (under "Project API keys" - keep this secret!)
+
+#### Step 1.3: Set Up Database Schema
+
+1. In your Supabase dashboard, go to **SQL Editor**
+2. Click **"New query"**
+3. Copy the entire contents of `supabase/schema.sql` from this project
+4. Paste it into the SQL Editor
+5. Click **"Run"** to execute the schema
+6. Verify tables were created by going to **Database** → **Tables**
+
+You should see these tables:
+- `positions`
+- `prices_daily`
+- `news`
+- `digests`
+- `digest_items`
+
+#### Step 1.4: Install Supabase CLI
+
+If you don't have the Supabase CLI installed:
+
+```bash
+# On Windows (PowerShell)
+scoop install supabase
+
+# Or using npm
+npm install -g supabase
+```
+
+Verify installation:
+```bash
+supabase --version
+```
+
+#### Step 1.5: Link to Your Project
+
+1. In your project directory, run:
+```bash
+supabase login
+```
+
+2. Link to your new project:
+```bash
+supabase link --project-ref your-project-ref
+```
+
+To find your project ref:
+- Go to your Supabase dashboard
+- Settings → General
+- Copy the "Reference ID"
+
+#### Step 1.6: Deploy Edge Functions
+
+Deploy all edge functions to your new project:
+
+```bash
+# Deploy ingest-csv function
+supabase functions deploy ingest-csv
+
+# Deploy fetch-prices function
+supabase functions deploy fetch-prices
+
+# Deploy fetch-news function
+supabase functions deploy fetch-news
+
+# Deploy generate-digest function
+supabase functions deploy generate-digest
+
+# Deploy daily-digest-cron function
+supabase functions deploy daily-digest-cron
+```
+
+#### Step 1.7: Set Environment Secrets for Edge Functions
+
+Set up the required secrets for your edge functions:
+
+```bash
+# Set sentiment service URL (use your deployed Python service URL)
+supabase secrets set SENTIMENT_SERVICE_URL=http://your-python-service-url:8000
+
+# Set a strong random secret for cron job security
+supabase secrets set CRON_SECRET=your-random-secret-string
+```
+
+Generate a random secret with:
+```bash
+# On Windows PowerShell
+-join ((48..57) + (65..90) + (97..122) | Get-Random -Count 32 | % {[char]$_})
+```
+
+#### Step 1.8: Set Up Cron Job (Optional - for automated daily digests)
+
+1. In Supabase dashboard, go to **Database** → **Cron Jobs**
+2. Create a new cron job:
+   - **Name**: `daily-digest`
+   - **Schedule**: `0 22 * * *` (runs at 10 PM daily)
+   - **SQL**: 
+   ```sql
+   SELECT net.http_post(
+     url := 'https://your-project-ref.supabase.co/functions/v1/daily-digest-cron',
+     headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_CRON_SECRET"}'::jsonb
+   ) AS request_id;
+   ```
+   Replace `your-project-ref` and `YOUR_CRON_SECRET` with your actual values
 
 ### 2. Frontend Setup
 
