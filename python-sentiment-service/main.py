@@ -21,7 +21,7 @@ app.add_middleware(
 )
 
 # HuggingFace Inference API settings
-HF_API_URL = "https://api-inference.huggingface.co/models/ProsusAI/finbert"
+HF_API_URL = "https://router.huggingface.co/models/ProsusAI/finbert"
 HF_TOKEN = os.environ.get("HUGGINGFACE_TOKEN", "")  # Optional, works without token but may have rate limits
 
 logger.info("Using HuggingFace Inference API for FinBERT")
