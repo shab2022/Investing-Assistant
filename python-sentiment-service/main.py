@@ -54,8 +54,11 @@ def get_sentiment_score(text: str) -> float:
             timeout=30
         )
         
+        logger.info(f"HF API Status: {response.status_code}")
+        
         if response.status_code == 200:
             result = response.json()
+            logger.info(f"HF API Response: {result}")
             
             # Parse the response - HF returns list of predictions
             if isinstance(result, list) and len(result) > 0:
@@ -76,9 +79,10 @@ def get_sentiment_score(text: str) -> float:
                 
                 # Convert to -1 to 1 scale
                 sentiment_score = positive_score - negative_score
+                logger.info(f"Calculated sentiment: {sentiment_score} (pos:{positive_score}, neg:{negative_score})")
                 return sentiment_score
         
-        logger.warning(f"API returned status {response.status_code}, using neutral score")
+        logger.warning(f"API returned status {response.status_code}: {response.text}")
         return 0.0
         
     except Exception as e:
